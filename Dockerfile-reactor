@@ -23,6 +23,9 @@ COPY application-reactor application-reactor
 # Копируем сгенерированные jOOQ классы (с правильным путем)
 COPY application-reactor/build/generated/sources/jooq/main application-reactor/build/generated/sources/jooq/main
 
+# ВАЖНО: Сначала собираем common модуль
+RUN ./gradlew :common:build -x test --no-daemon
+
 # Собираем Reactor приложение
 RUN ./gradlew :application-reactor:bootJar -x test -x generateJooq --no-daemon
 
