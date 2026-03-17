@@ -17,8 +17,12 @@ RUN ./gradlew dependencies --no-daemon || true
 # Копируем исходный код
 COPY src src
 
-# Копируем сгенерированные jOOQ классы (исправленный путь)
-COPY build/generated/sources/jooq/main build/generated/sources/jooq/main
+# Копируем сгенерированные jOOQ классы из ПРАВИЛЬНОГО пути
+# В git они лежат в generated/, а не в build/generated
+COPY generated/sources/jooq/main build/generated/sources/jooq/main
+
+# Добавляем отладку (чтобы увидеть, что скопировалось)
+RUN ls -la build/generated/sources/jooq/main/ || echo "Папка не найдена"
 
 # Собираем приложение
 RUN ./gradlew bootJar -x test -x generateJooq --no-daemon
