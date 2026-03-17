@@ -3,8 +3,11 @@ FROM eclipse-temurin:25-jdk AS build
 
 WORKDIR /workspace
 
-# Копируем всё (как в примере)
+# Копируем всё
 COPY . .
+
+# Даем права на выполнение gradlew
+RUN chmod +x gradlew
 
 # Собираем Loom приложение
 RUN ./gradlew :application-loom:bootJar --no-daemon -x test -PskipJooq
