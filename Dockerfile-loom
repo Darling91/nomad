@@ -10,7 +10,7 @@ COPY build.gradle .
 COPY settings.gradle .
 RUN chmod +x gradlew
 
-# Скачиваем зависимости (кэшируется)
+# Скачиваем зависимости Loom (кэшируется)
 RUN ./gradlew :application-loom:dependencies --no-daemon || true
 
 # Теперь копируем исходный код
@@ -22,6 +22,9 @@ COPY application-reactor application-reactor
 
 # Копируем сгенерированные jOOQ классы
 COPY application-loom/build/generated/sources/jooq/main application-loom/build/generated/sources/jooq/main
+
+# ВАЖНО: Сначала собираем common модуль
+RUN ./gradlew :common:build -x test --no-daemon
 
 # Собираем Loom приложение
 RUN ./gradlew :application-loom:bootJar -x test -x generateJooq --no-daemon
