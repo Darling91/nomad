@@ -3,10 +3,10 @@ spring:
     name: nomad-rates-sentinel
 
   # ============================================
-  # АКТИВНЫЙ ПРОФИЛЬ (Render автоматически установит production)
+  # АКТИВНЫЙ ПРОФИЛЬ
   # ============================================
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:production}
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
   # ============================================
   # R2DBC КОНФИГУРАЦИЯ (для Reactor)
@@ -16,8 +16,8 @@ spring:
     username: ${SPRING_R2DBC_USERNAME:${DB_USERNAME:admin}}
     password: ${SPRING_R2DBC_PASSWORD:${DB_PASSWORD:qwerty}}
     pool:
-      max-size: ${R2DBC_MAX_POOL_SIZE:10}
-      initial-size: ${R2DBC_INITIAL_POOL_SIZE:2}
+      max-size: ${R2DBC_MAX_POOL_SIZE:5}        # Уменьшено с 10
+      initial-size: ${R2DBC_INITIAL_POOL_SIZE:1} # Уменьшено с 2
       max-idle-time: 30m
       validation-query: SELECT 1
     properties:
@@ -34,16 +34,16 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:qwerty}}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: ${JDBC_MAX_POOL_SIZE:10}
-      minimum-idle: ${JDBC_MIN_IDLE:3}
+      maximum-pool-size: ${JDBC_MAX_POOL_SIZE:5}    # Уменьшено с 10
+      minimum-idle: ${JDBC_MIN_IDLE:2}               # Уменьшено с 3
       connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
       idle-timeout: 600000
       max-lifetime: 1800000
       pool-name: NomadHikariPool
       connection-test-query: SELECT 1
       validation-timeout: 3000
-      leak-detection-threshold: ${LEAK_DETECTION_THRESHOLD:10000}
-      register-mbeans: true
+      leak-detection-threshold: ${LEAK_DETECTION_THRESHOLD:30000} # Увеличено
+      register-mbeans: false  # Отключаем JMX для экономии памяти
 
   # ============================================
   # LIQUIBASE КОНФИГУРАЦИЯ
@@ -81,25 +81,47 @@ spring:
     show-sql: false
     open-in-view: false
 
-
-
 # ============================================
 # SERVER КОНФИГУРАЦИЯ
 # ============================================
 server:
   port: ${PORT:8080}
   error:
+    path: /error
   compression:
     enabled: true
     mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
     min-response-size: 1024
   tomcat:
-    max-threads: ${TOMCAT_MAX_THREADS:50}
-    min-spare-threads: ${TOMCAT_MIN_SPARE:5}
-    max-connections: ${TOMCAT_MAX_CONNECTIONS:200}
-    accept-count: ${TOMCAT_ACCEPT_COUNT:50}
+    max-threads: ${TOMCAT_MAX_THREADS:30}        # Уменьшено с 50
+    min-spare-threads: ${TOMCAT_MIN_SPARE:3}      # Уменьшено с 5
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:100} # Уменьшено с 200
+    accept-count: ${TOMCAT_ACCEPT_COUNT:30}       # Уменьшено с 50
     connection-timeout: ${TOMCAT_CONNECTION_TIMEOUT:10000}
-    max-keep-alive-requests: ${TOMCAT_KEEP_ALIVE:50}
+    max-keep-alive-requests: ${TOMCAT_KEEP_ALIVE:30} # Уменьшено с 50
+
+# ============================================
+# MANAGEMENT (ACTUATOR) КОНФИГУРАЦИЯ
+# ============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+      base-path: /actuator
+  metrics:
+    export:
+      simple:
+        enabled: true
+    enable:
+      jvm: true
+      system: true
+      tomcat: true
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
 
 # ============================================
 # LOGGING КОНФИГУРАЦИЯ
@@ -110,41 +132,39 @@ logging:
     com.nomad: ${LOG_LEVEL:INFO}
 
     # Liquibase
-    liquibase: ${LOG_LEVEL_LIQUIBASE:INFO}
-    liquibase.changelog: ${LOG_LEVEL_LIQUIBASE:INFO}
+    liquibase: ${LOG_LEVEL_LIQUIBASE:WARN}      # Уменьшено с INFO
+    liquibase.changelog: ${LOG_LEVEL_LIQUIBASE:WARN}
 
     # R2DBC
-    org.springframework.r2dbc: ${LOG_LEVEL_R2DBC:INFO}
-    io.r2dbc.postgresql.QUERY: ${LOG_LEVEL_R2DBC:INFO}
-    io.r2dbc.postgresql.PARAM: ${LOG_LEVEL_R2DBC:INFO}
+    org.springframework.r2dbc: ${LOG_LEVEL_R2DBC:WARN}  # Уменьшено с INFO
+    io.r2dbc.postgresql.QUERY: ${LOG_LEVEL_R2DBC:WARN}
+    io.r2dbc.postgresql.PARAM: ${LOG_LEVEL_R2DBC:WARN}
 
     # JDBC
-    org.springframework.jdbc: ${LOG_LEVEL_JDBC:INFO}
-    com.zaxxer.hikari: ${LOG_LEVEL_HIKARI:INFO}
-    org.springframework.jdbc.core.JdbcTemplate: ${LOG_LEVEL_JDBC:INFO}
+    org.springframework.jdbc: ${LOG_LEVEL_JDBC:WARN}    # Уменьшено с INFO
+    com.zaxxer.hikari: ${LOG_LEVEL_HIKARI:WARN}         # Уменьшено с INFO
+    org.springframework.jdbc.core.JdbcTemplate: ${LOG_LEVEL_JDBC:WARN}
 
     # jOOQ
-    org.jooq: ${LOG_LEVEL_JOOQ:INFO}
-    org.jooq.tools.LoggerListener: ${LOG_LEVEL_JOOQ:INFO}
+    org.jooq: ${LOG_LEVEL_JOOQ:WARN}                    # Уменьшено с INFO
+    org.jooq.tools.LoggerListener: ${LOG_LEVEL_JOOQ:WARN}
 
     # WebClient
-    org.springframework.web.reactive.function.client: ${LOG_LEVEL_WEB:INFO}
-    reactor.netty.http.client: ${LOG_LEVEL_WEB:INFO}
+    org.springframework.web.reactive.function.client: ${LOG_LEVEL_WEB:WARN}
+    reactor.netty.http.client: ${LOG_LEVEL_WEB:WARN}
 
     # Web
-    org.springframework.web: ${LOG_LEVEL_WEB:INFO}
+    org.springframework.web: ${LOG_LEVEL_WEB:WARN}
 
     # Актуатор
-    org.springframework.boot.actuate: ${LOG_LEVEL_ACTUATOR:INFO}
+    org.springframework.boot.actuate: ${LOG_LEVEL_ACTUATOR:WARN}
 
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: ${LOG_FILE:logs/nomad-rates.log}
-    max-size: ${LOG_MAX_SIZE:100MB}
-    max-history: ${LOG_MAX_HISTORY:7}
-
+    max-size: ${LOG_MAX_SIZE:50MB}               # Уменьшено с 100MB
+    max-history: ${LOG_MAX_HISTORY:3}             # Уменьшено с 7
 
 # ============================================
 # НАСТРОЙКИ ПРИЛОЖЕНИЯ
@@ -172,16 +192,16 @@ app:
 
   # Настройки для Loom
   loom:
-    max-pool-size: ${LOOM_MAX_POOL:200}
-    connection-semaphore: ${LOOM_SEMAPHORE:18}
+    max-pool-size: ${LOOM_MAX_POOL:100}          # Уменьшено с 200
+    connection-semaphore: ${LOOM_SEMAPHORE:10}    # Уменьшено с 18
     virtual-threads: ${LOOM_VIRTUAL_THREADS:true}
 
   # Настройки для Reactor
   reactor:
-    max-connections: ${REACTOR_MAX_CONNECTIONS:20}
+    max-connections: ${REACTOR_MAX_CONNECTIONS:10}  # Уменьшено с 20
     retry-attempts: ${REACTOR_RETRY_ATTEMPTS:2}
     retry-backoff: ${REACTOR_RETRY_BACKOFF:200}
-    bulkhead-size: ${REACTOR_BULKHEAD:20}
+    bulkhead-size: ${REACTOR_BULKHEAD:10}           # Уменьшено с 20
     circuit-breaker:
       failure-threshold: ${REACTOR_CB_THRESHOLD:5}
       timeout-ms: ${REACTOR_CB_TIMEOUT:30000}
@@ -207,25 +227,26 @@ spring:
       on-profile: production
 
   r2dbc:
-    url: ${SPRING_R2DBC_URL}  # Берем из переменных окружения Render
+    url: ${SPRING_R2DBC_URL}
     username: ${SPRING_R2DBC_USERNAME}
     password: ${SPRING_R2DBC_PASSWORD}
     pool:
-      max-size: 5
+      max-size: 3                                   # Уменьшено с 5
       initial-size: 1
     properties:
       sslmode: require
       ssl: true
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL}  # Берем из переменных окружения Render
+    url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     hikari:
-      maximum-pool-size: 5
+      maximum-pool-size: 3                          # Уменьшено с 5
       minimum-idle: 1
       leak-detection-threshold: 30000
       connection-timeout: 30000
+      register-mbeans: false
 
   liquibase:
     url: ${SPRING_DATASOURCE_URL}
@@ -235,16 +256,17 @@ spring:
 
 server:
   tomcat:
-    max-threads: 50
-    min-spare-threads: 5
-    max-connections: 200
+    max-threads: 20                                 # Уменьшено с 50
+    min-spare-threads: 2                            # Уменьшено с 5
+    max-connections: 50                              # Уменьшено с 200
+    accept-count: 20                                 # Уменьшено с 50
 
 logging:
   level:
     com.nomad: INFO
     liquibase: WARN
     org.springframework.r2dbc: WARN
-    io.r2dbc.postgresql.QUERY: INFO
+    io.r2dbc.postgresql.QUERY: WARN
     com.zaxxer.hikari: WARN
 
 app:
@@ -253,19 +275,19 @@ app:
       timeout: 30000
     xe:
       timeout: 30000
-      max-parallel: 2
+      max-parallel: 1                               # Уменьшено с 2
       retry-attempts: 2
   collector:
     fixed-delay: 7200000
   loom:
-    max-pool-size: 100
-    connection-semaphore: 5
+    max-pool-size: 50                               # Уменьшено с 100
+    connection-semaphore: 3                          # Уменьшено с 5
     virtual-threads: true
   reactor:
-    max-connections: 10
+    max-connections: 5                               # Уменьшено с 10
     retry-attempts: 2
     retry-backoff: 200
-    bulkhead-size: 10
+    bulkhead-size: 5                                 # Уменьшено с 10
   timeout:
     collection: 25
     delta: 3
@@ -284,8 +306,8 @@ spring:
     username: ${DB_USERNAME:admin}
     password: ${DB_PASSWORD:qwerty}
     pool:
-      max-size: 10
-      initial-size: 2
+      max-size: 5                                    # Уменьшено с 10
+      initial-size: 1                                # Уменьшено с 2
     properties:
       sslmode: disable
 
@@ -294,9 +316,10 @@ spring:
     username: ${DB_USERNAME:admin}
     password: ${DB_PASSWORD:qwerty}
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
+      maximum-pool-size: 5                           # Уменьшено с 10
+      minimum-idle: 1                                # Уменьшено с 2
       leak-detection-threshold: 10000
+      register-mbeans: false
 
   liquibase:
     url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
@@ -306,8 +329,8 @@ spring:
 
 server:
   tomcat:
-    max-threads: 200
-    min-spare-threads: 10
+    max-threads: 30                                  # Уменьшено с 200
+    min-spare-threads: 3                             # Уменьшено с 10
 
 logging:
   level:
@@ -322,14 +345,14 @@ app:
       timeout: 15000
     xe:
       timeout: 15000
-      max-parallel: 5
+      max-parallel: 2                                # Уменьшено с 5
   loom:
-    max-pool-size: 200
-    connection-semaphore: 18
+    max-pool-size: 100                               # Уменьшено с 200
+    connection-semaphore: 8                           # Уменьшено с 18
   reactor:
-    max-connections: 50
+    max-connections: 20                              # Уменьшено с 50
     retry-attempts: 3
-    bulkhead-size: 20
+    bulkhead-size: 10                                # Уменьшено с 20
   timeout:
     collection: 30
     delta: 5
