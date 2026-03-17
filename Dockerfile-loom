@@ -3,19 +3,24 @@ FROM eclipse-temurin:25-jdk-alpine AS build
 
 WORKDIR /app
 
-# Копируем всё нужное для сборки Loom
+# Копируем Gradle wrapper
 COPY gradlew .
 COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
-COPY common common
-COPY loom loom
-COPY application-loom application-loom
-
 RUN chmod +x gradlew
 
-# Просто собираем Loom (без всяких jOOQ хаков)
-RUN ./gradlew :application-loom:bootJar -x test
+# Копируем корневые конфигурации
+COPY build.gradle .
+COPY settings.gradle .
+
+# Копируем ВСЕ модули (чтобы Gradle не ругался)
+COPY common common
+COPY loom loom
+COPY reactor reactor
+COPY application-loom application-loom
+COPY application-reactor application-reactor
+
+# Собираем Loom приложение с флагом skipJooq
+RUN ./gradlew :application-loom:bootJar -x test -PskipJooq
 
 # ---- Run Stage ----
 FROM eclipse-temurin:25-jre-alpine
