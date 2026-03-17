@@ -1,0 +1,54 @@
+# ---- Build Stage ----
+FROM eclipse-temurin:25-jdk-alpine AS build
+
+WORKDIR /app
+
+# Копируем Gradle wrapper
+COPY gradlew .
+COPY gradle gradle
+RUN chmod +x gradlew
+
+# Копируем корневые конфигурации
+COPY build.gradle .
+COPY settings.gradle .
+
+# Копируем **ВСЕ** модули (Gradle ожидает их наличие)
+COPY common common
+COPY loom loom
+COPY reactor reactor
+COPY application-loom application-loom
+COPY application-reactor application-reactor
+
+# Скачиваем зависимости
+RUN ./gradlew :application-reactor:dependencies --no-daemon || true
+
+# Копируем сгенерированные jOOQ классы
+COPY application-reactor/build/generated/sources/jooq application-reactor/build/generated/sources/jooq
+
+# Собираем Reactor приложение
+RUN ./gradlew :application-reactor:bootJar -x test -x generateJooq --no-daemon
+
+# ---- Run Stage ----
+FROM eclipse-temurin:25-jre-alpine
+
+WORKDIR /app
+
+# Копируем JAR
+COPY --from=build /app/application-reactor/build/libs/*.jar app.jar
+
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup && \
+    mkdir -p /app/logs && \
+    chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", \
+    "-XX:+UseZGC", \
+    "-Xmx256m", \
+    "-Xms128m", \
+    "-XX:MaxMetaspaceSize=64m", \
+    "-XX:+ExitOnOutOfMemoryError", \
+    "-jar", "app.jar"]

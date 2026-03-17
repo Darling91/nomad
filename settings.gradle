@@ -1,16 +1,20 @@
-rootProject.name = 'nomad-rates-sentinel'
+rootProject.name = 'nomad'
 
-buildCache {
-    local {
-        enabled = true
-    }
-}
+// Включаем проекты с короткими именами
+include 'common'
+include 'loom'
+include 'reactor'
+include 'application-loom'
+include 'application-reactor'
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven { url 'https://repo.spring.io/milestone' }
-        maven { url 'https://repo.spring.io/snapshot' }
-        maven { url 'https://plugins.gradle.org/m2/' }
-    }
-}
+// Указываем пути к папкам
+project(':common').projectDir = file('common')
+project(':loom').projectDir = file('loom')
+project(':reactor').projectDir = file('reactor')
+project(':application-loom').projectDir = file('application-loom')
+project(':application-reactor').projectDir = file('application-reactor')
+
+// Эти строки НЕ НУЖНЫ - они вызывают ошибку:
+// project(':common').name = 'nomad-common'  // ← УДАЛИТЕ это
+// project(':loom').name = 'nomad-loom'      // ← УДАЛИТЕ это
+// и так далее...

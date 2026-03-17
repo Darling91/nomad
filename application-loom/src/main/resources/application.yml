@@ -1,0 +1,234 @@
+spring:
+  autoconfigure:
+    r2dbc:
+      enabled: false
+  application:
+    name: nomad-loom
+
+  pool:
+    enabled: false
+
+  datasource:
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${JDBC_MAX_POOL_SIZE:3}
+      minimum-idle: ${JDBC_MIN_IDLE:1}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: NomadHikariPool
+      connection-test-query: SELECT 1
+      validation-timeout: 3000
+      leak-detection-threshold: ${LEAK_DETECTION_THRESHOLD:30000}
+      register-mbeans: false
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
+    user: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
+    database-change-log-table: DATABASECHANGELOG
+    database-change-log-lock-table: DATABASECHANGELOGLOCK
+    drop-first: false
+    clear-checksums: false
+    parameters:
+      schema-name: public
+    contexts: ${LIQUIBASE_CONTEXTS:dev,all}
+    test-rollback-on-update: false
+
+  jpa:
+    database: POSTGRESQL
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        format_sql: false
+    show-sql: false
+    open-in-view: false
+
+  threads:
+    virtual:
+      enabled: true
+  profiles:
+    active: loom
+
+server:
+  port: ${PORT:8081}
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  tomcat:
+    max-threads: ${TOMCAT_MAX_THREADS:20}
+    min-spare-threads: ${TOMCAT_MIN_SPARE:2}
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:50}
+    accept-count: ${TOMCAT_ACCEPT_COUNT:10}
+    connection-timeout: ${TOMCAT_CONNECTION_TIMEOUT:10000}
+    max-keep-alive-requests: ${TOMCAT_KEEP_ALIVE:20}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  parser:
+    nbk:
+      url: ${NBK_URL:https://nationalbank.kz/ru/exchangerates/ezhednevnye-oficialnye-rynochnye-kursy-valyut}
+      timeout: ${NBK_TIMEOUT:15000}
+      user-agent: ${USER_AGENT:Mozilla/5.0 (compatible; NomadRatesBot/2.0)}
+    xe:
+      url: ${XE_URL:https://www.xe.com/currencyconverter/convert/?Amount=1&From=%s&To=KZT}
+      timeout: ${XE_TIMEOUT:15000}
+      user-agent: ${USER_AGENT:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36}
+      max-parallel: ${XE_MAX_PARALLEL:1}
+      retry-attempts: ${XE_RETRY_ATTEMPTS:1}
+      retry-delay-ms: ${XE_RETRY_DELAY:200}
+
+  collector:
+    enabled: ${COLLECTOR_ENABLED:true}
+    initial-delay: ${COLLECTOR_INITIAL_DELAY:5000}
+    fixed-delay: ${COLLECTOR_FIXED_DELAY:7200000}
+
+  loom:
+    max-pool-size: ${LOOM_MAX_POOL:50}
+    connection-semaphore: ${LOOM_SEMAPHORE:5}
+    virtual-threads: ${LOOM_VIRTUAL_THREADS:true}
+
+  timeout:
+    collection: ${COLLECTION_TIMEOUT:25}
+    delta: ${DELTA_TIMEOUT:3}
+    connection: ${CONNECTION_TIMEOUT:10}
+    request: ${REQUEST_TIMEOUT:15}
+
+  batch:
+    size: ${BATCH_SIZE:25}
+
+logging:
+  level:
+    com.nomad: ${LOG_LEVEL:DEBUG}
+    liquibase: ${LOG_LEVEL_LIQUIBASE:INFO}
+    org.springframework.jdbc: ${LOG_LEVEL_JDBC:INFO}
+    com.zaxxer.hikari: ${LOG_LEVEL_HIKARI:INFO}
+    org.jooq: ${LOG_LEVEL_JOOQ:INFO}
+    org.springframework.web: ${LOG_LEVEL_WEB:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE:logs/nomad-loom.log}
+    max-size: ${LOG_MAX_SIZE:10MB}
+    max-history: ${LOG_MAX_HISTORY:3}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: production
+
+  datasource:
+    url: ${JDBC_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 2
+      minimum-idle: 1
+      leak-detection-threshold: 30000
+      register-mbeans: false
+
+  liquibase:
+    url: ${JDBC_URL}
+    user: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    contexts: prod,all
+
+server:
+  tomcat:
+    max-threads: 10
+    min-spare-threads: 1
+    max-connections: 20
+
+logging:
+  level:
+    com.nomad: INFO
+    liquibase: WARN
+    org.springframework.jdbc: WARN
+    com.zaxxer.hikari: WARN
+    org.jooq: WARN
+  file:
+    name: /dev/null
+
+app:
+  parser:
+    nbk:
+      timeout: 30000
+    xe:
+      timeout: 30000
+      max-parallel: 1
+      retry-attempts: 1
+  collector:
+    fixed-delay: 7200000
+  loom:
+    max-pool-size: 20
+    connection-semaphore: 2
+
+# ============================================
+# DEV ПРОФИЛЬ (локальная разработка)
+# ============================================
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      leak-detection-threshold: 10000
+
+  liquibase:
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
+    user: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
+    contexts: dev,all
+
+server:
+  tomcat:
+    max-threads: 30
+    min-spare-threads: 3
+
+logging:
+  level:
+    com.nomad: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.jooq.tools.LoggerListener: DEBUG
+
+app:
+  parser:
+    nbk:
+      timeout: 15000
+    xe:
+      timeout: 15000
+      max-parallel: 2
+  loom:
+    max-pool-size: 50
+    connection-semaphore: 5
+  timeout:
+    collection: 30
+    delta: 5

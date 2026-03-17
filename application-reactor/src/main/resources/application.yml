@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: nomad-reactor
+  profiles:
+    active: reactor
+
+  r2dbc:
+    url: ${R2DBC_URL:r2dbc:postgresql://localhost:5432/nomad}
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
+    pool:
+      max-size: 5
+      initial-size: 2
+      max-idle-time: 10m
+      validation-query: SELECT 1
+    properties:
+      sslmode: disable
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
+    user: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
+
+server:
+  port: ${PORT:8080}
+  netty:
+    connection-timeout: 5s
+
+app:
+  parser:
+    nbk:
+      url: https://nationalbank.kz/ru/exchangerates/ezhednevnye-oficialnye-rynochnye-kursy-valyut
+      timeout: 5000
+      connect-timeout: 3000
+      read-timeout: 5000
+      user-agent: "Mozilla/5.0 (compatible; NomadRatesBot/2.0)"
+
+    xe:
+      url: https://www.xe.com/currencyconverter/convert/?Amount=1&From=%s&To=KZT
+      timeout: 4000
+      connect-timeout: 2000
+      read-timeout: 4000
+      user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      max-parallel: 5
+      retry-attempts: 0
+      retry-delay-ms: 0
+      cache-ttl: 60000
+
+  collector:
+    enabled: true
+    initial-delay: 0
+    fixed-delay: 300000
+
+  reactor:
+    max-connections: 50
+    retry-attempts: 0
+    bulkhead-size: 20
+
+  timeout:
+    collection: 10
+    connection: 5
+    request: 8
+
+logging:
+  level:
+    com.nomad: DEBUG
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.postgresql.QUERY: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+    reactor.netty.http.client: DEBUG
+    org.jooq: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  level.root: INFO
