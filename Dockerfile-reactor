@@ -3,27 +3,25 @@ FROM eclipse-temurin:25-jdk-alpine AS build
 
 WORKDIR /app
 
-# Копируем Gradle wrapper
+# Копируем только файлы Gradle для кэширования зависимостей
 COPY gradlew .
 COPY gradle gradle
-RUN chmod +x gradlew
-
-# Копируем корневые конфигурации
 COPY build.gradle .
 COPY settings.gradle .
+RUN chmod +x gradlew
 
-# Копируем **ВСЕ** модули (Gradle ожидает их наличие)
+# Скачиваем зависимости Reactor (кэшируется)
+RUN ./gradlew :application-reactor:dependencies --no-daemon || true
+
+# Теперь копируем исходный код
 COPY common common
 COPY loom loom
 COPY reactor reactor
 COPY application-loom application-loom
 COPY application-reactor application-reactor
 
-# Скачиваем зависимости
-RUN ./gradlew :application-reactor:dependencies --no-daemon || true
-
-# Копируем сгенерированные jOOQ классы
-COPY application-reactor/build/generated/sources/jooq application-reactor/build/generated/sources/jooq
+# Копируем сгенерированные jOOQ классы (с правильным путем)
+COPY application-reactor/build/generated/sources/jooq/main application-reactor/build/generated/sources/jooq/main
 
 # Собираем Reactor приложение
 RUN ./gradlew :application-reactor:bootJar -x test -x generateJooq --no-daemon
