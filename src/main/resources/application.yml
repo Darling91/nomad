@@ -6,7 +6,7 @@ spring:
   # АКТИВНЫЙ ПРОФИЛЬ (Render автоматически установит production)
   # ============================================
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    active: ${SPRING_PROFILES_ACTIVE:production}
 
   # ============================================
   # R2DBC КОНФИГУРАЦИЯ (для Reactor)
