@@ -1,8 +1,9 @@
 plugins {
     id 'org.springframework.boot'
-    id 'nu.studer.jooq' version '9.0'
 }
-def skipJooq = project.hasProperty('skipJooq') ? project.skipJooq.toBoolean() : false
+if (!project.hasProperty('skipJooq')) {
+    apply plugin: 'nu.studer.jooq'
+}
 
     jooq {
         version = '3.19.30'
