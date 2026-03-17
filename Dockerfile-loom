@@ -3,31 +3,19 @@ FROM eclipse-temurin:25-jdk-alpine AS build
 
 WORKDIR /app
 
-# Копируем только файлы Gradle для кэширования зависимостей
+# Копируем всё нужное для сборки Loom
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
-RUN chmod +x gradlew
-
-# Скачиваем зависимости Loom (кэшируется)
-RUN ./gradlew :application-loom:dependencies --no-daemon || true
-
-# Теперь копируем исходный код
 COPY common common
 COPY loom loom
-COPY reactor reactor
 COPY application-loom application-loom
-COPY application-reactor application-reactor
 
-# Копируем сгенерированные jOOQ классы
-COPY application-loom/build/generated/sources/jooq/main application-loom/build/generated/sources/jooq/main
+RUN chmod +x gradlew
 
-# ВАЖНО: Сначала собираем common модуль
-RUN ./gradlew :common:build -x test --no-daemon
-
-# Собираем Loom приложение
-RUN ./gradlew :application-loom:bootJar -x test -x generateJooq --no-daemon
+# Просто собираем Loom (без всяких jOOQ хаков)
+RUN ./gradlew :application-loom:bootJar -x test
 
 # ---- Run Stage ----
 FROM eclipse-temurin:25-jre-alpine
@@ -36,19 +24,9 @@ WORKDIR /app
 
 COPY --from=build /app/application-loom/build/libs/*.jar app.jar
 
-RUN addgroup -S appgroup && \
-    adduser -S appuser -G appgroup && \
-    mkdir -p /app/logs && \
-    chown -R appuser:appgroup /app
-
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", \
-    "-XX:+UseZGC", \
-    "-Xmx256m", \
-    "-Xms128m", \
-    "-XX:MaxMetaspaceSize=64m", \
-    "-XX:+ExitOnOutOfMemoryError", \
-    "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
