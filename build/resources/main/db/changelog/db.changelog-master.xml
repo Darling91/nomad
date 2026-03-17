@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <include file="001-create-table_currency_rates.sql" relativeToChangelogFile="true"/>
+    <include file="002-create-function.sql" relativeToChangelogFile="true"/>
+    <include file="003-create-trigger.sql" relativeToChangelogFile="true"/>
+    <include file="004-create-procedure-delta.sql" relativeToChangelogFile="true"/>
+    <include file="005-create-function-wrapper.sql" relativeToChangelogFile="true"/>
+    <include file="006-create-procedure-atomic.sql" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>
