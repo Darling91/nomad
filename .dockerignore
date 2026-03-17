@@ -1,51 +1,10 @@
-# Git
+target/
 .git/
-.gitignore
-.gitattributes
-
-# Gradle
-.gradle/
-gradle/
-build/
-*.jar
-*.war
-*.tar
-*.zip
-
-# IDE
-.idea/
-*.iml
-.vscode/
-.settings/
-.classpath
-.project
-.DS_Store
-
-# Logs
-logs/
-*.log
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Docker
-Dockerfile
-docker-compose*.yml
-.dockerignore
-
-# Temp files
-*.tmp
-*.temp
-*.swp
-*.swo
-*~
-
-# Проектные файлы
-README.md
-LICENSE
 *.md
-
-# Не игнорируем сгенерированные jOOQ классы!
-# build/generated/ - НЕ ИГНОРИРУЕМ!
+.env
+.vscode/
+.idea/
+*.log
+build/  # Добавить, чтобы не копировать старую сборку
+.gradle # Добавить, чтобы не копировать кеш Gradle с хоста
+.DS_Store # Добавить для macOS
