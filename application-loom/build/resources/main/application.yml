@@ -1,13 +1,19 @@
 spring:
   autoconfigure:
+    exclude:
+      - org.springframework.boot.r2dbc.autoconfigure.R2dbcInitializationAutoConfiguration
+
     r2dbc:
-      enabled: false
+      enabled: false  # Некоторые версии поддерживают это
   application:
     name: nomad-loom
 
   pool:
     enabled: false
 
+  # ============================================
+  # JDBC КОНФИГУРАЦИЯ (для Loom)
+  # ============================================
   datasource:
     url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
     username: ${DB_USERNAME:admin}
@@ -25,6 +31,9 @@ spring:
       leak-detection-threshold: ${LEAK_DETECTION_THRESHOLD:30000}
       register-mbeans: false
 
+  # ============================================
+  # LIQUIBASE КОНФИГУРАЦИЯ
+  # ============================================
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.xml
@@ -40,6 +49,9 @@ spring:
     contexts: ${LIQUIBASE_CONTEXTS:dev,all}
     test-rollback-on-update: false
 
+  # ============================================
+  # JPA КОНФИГУРАЦИЯ (для Loom)
+  # ============================================
   jpa:
     database: POSTGRESQL
     hibernate:
@@ -55,12 +67,18 @@ spring:
     show-sql: false
     open-in-view: false
 
+  # ============================================
+  # THREADS КОНФИГУРАЦИЯ (Virtual Threads)
+  # ============================================
   threads:
     virtual:
       enabled: true
   profiles:
     active: loom
 
+# ============================================
+# SERVER КОНФИГУРАЦИЯ (Tomcat)
+# ============================================
 server:
   port: ${PORT:8081}
   compression:
@@ -75,6 +93,9 @@ server:
     connection-timeout: ${TOMCAT_CONNECTION_TIMEOUT:10000}
     max-keep-alive-requests: ${TOMCAT_KEEP_ALIVE:20}
 
+# ============================================
+# ACTUATOR КОНФИГУРАЦИЯ
+# ============================================
 management:
   endpoints:
     web:
@@ -84,6 +105,9 @@ management:
     health:
       show-details: always
 
+# ============================================
+# НАСТРОЙКИ ПАРСЕРОВ
+# ============================================
 app:
   parser:
     nbk:
@@ -117,6 +141,9 @@ app:
   batch:
     size: ${BATCH_SIZE:25}
 
+# ============================================
+# LOGGING КОНФИГУРАЦИЯ
+# ============================================
 logging:
   level:
     com.nomad: ${LOG_LEVEL:DEBUG}
@@ -132,6 +159,9 @@ logging:
     max-size: ${LOG_MAX_SIZE:10MB}
     max-history: ${LOG_MAX_HISTORY:3}
 
+# ============================================
+# ПРОДАКШН ПРОФИЛЬ (для Render)
+# ============================================
 ---
 spring:
   config:

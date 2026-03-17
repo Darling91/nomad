@@ -1,0 +1,89 @@
+plugins {
+    id 'org.springframework.boot'
+    id 'nu.studer.jooq' version '9.0'
+}
+def skipJooq = project.hasProperty('skipJooq') ? project.skipJooq.toBoolean() : false
+
+    jooq {
+        version = '3.19.30'
+        configurations {
+            main {
+                generationTool {
+                    logging = org.jooq.meta.jaxb.Logging.WARN
+
+                    jdbc {
+                        driver = 'org.postgresql.Driver'
+                        url = 'jdbc:postgresql://localhost:5432/nomad'
+                        user = 'admin'
+                        password = 'qwerty'
+                    }
+
+                    generator {
+                        name = 'org.jooq.codegen.JavaGenerator'
+
+                        database {
+                            name = 'org.jooq.meta.postgres.PostgresDatabase'
+                            inputSchema = 'public'
+                            includes = '.*'
+                            excludes = 'pg_catalog.*|information_schema.*|pg_toast.*'
+                        }
+
+                        generate {
+                            records = true
+                            immutablePojos = true
+                            fluentSetters = true
+                            daos = false
+                            pojos = true
+                            springAnnotations = true
+                            javaTimeTypes = true
+                            generatedAnnotation = true
+                            nullableAnnotation = false
+                            constructorPropertiesAnnotation = true
+                            constructorPropertiesAnnotationOnPojos = true
+                            constructorPropertiesAnnotationOnRecords = true
+                        }
+
+                        target {
+                            packageName = 'com.nomad.generated.jooq'
+                            directory = 'build/generated/sources/jooq/main'
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+sourceSets {
+    main {
+        java {
+            srcDirs += 'build/generated/sources/jooq/main'
+        }
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn tasks.named('generateJooq')
+}
+
+dependencies {
+    implementation project(':common')
+    implementation project(':loom')
+
+    // Liquibase
+    implementation 'org.springframework.boot:spring-boot-starter-liquibase'
+
+    // Actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // jOOQ generator dependency
+    jooqGenerator 'org.postgresql:postgresql'
+}
+
+springBoot {
+    mainClass = 'com.nomad.NomadLoomApplication'
+}
+
+bootJar {
+    archiveFileName = "nomad-loom-${version}.jar"
+}
