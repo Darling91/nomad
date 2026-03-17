@@ -3,12 +3,18 @@ spring:
     name: nomad-rates-sentinel
 
   # ============================================
+  # АКТИВНЫЙ ПРОФИЛЬ (Render автоматически установит production)
+  # ============================================
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # ============================================
   # R2DBC КОНФИГУРАЦИЯ (для Reactor)
   # ============================================
   r2dbc:
-    url: ${R2DBC_URL:r2dbc:postgresql://localhost:5432/nomad}
-    username: ${DB_USERNAME:admin}
-    password: ${DB_PASSWORD:qwerty}
+    url: ${SPRING_R2DBC_URL:${R2DBC_URL:r2dbc:postgresql://localhost:5432/nomad}}
+    username: ${SPRING_R2DBC_USERNAME:${DB_USERNAME:admin}}
+    password: ${SPRING_R2DBC_PASSWORD:${DB_PASSWORD:qwerty}}
     pool:
       max-size: ${R2DBC_MAX_POOL_SIZE:10}
       initial-size: ${R2DBC_INITIAL_POOL_SIZE:2}
@@ -20,12 +26,12 @@ spring:
       applicationName: nomad-rates
 
   # ============================================
-  # JDBC КОНФИГУРАЦИЯ (для Loom)
+  # JDBC КОНФИГУРАЦИЯ (для Loom и Liquibase)
   # ============================================
   datasource:
-    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
-    username: ${DB_USERNAME:admin}
-    password: ${DB_PASSWORD:qwerty}
+    url: ${SPRING_DATASOURCE_URL:${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USERNAME:admin}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:qwerty}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: ${JDBC_MAX_POOL_SIZE:10}
@@ -45,9 +51,9 @@ spring:
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.xml
-    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
-    user: ${DB_USERNAME:admin}
-    password: ${DB_PASSWORD:qwerty}
+    url: ${SPRING_DATASOURCE_URL:${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}}
+    user: ${SPRING_DATASOURCE_USERNAME:${DB_USERNAME:admin}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:qwerty}}
     database-change-log-table: DATABASECHANGELOG
     database-change-log-lock-table: DATABASECHANGELOGLOCK
     drop-first: false
@@ -154,7 +160,7 @@ app:
       url: ${XE_URL:https://www.xe.com/currencyconverter/convert/?Amount=1&From=%s&To=KZT}
       timeout: ${XE_TIMEOUT:15000}
       user-agent: ${USER_AGENT:Mozilla/5.0 (compatible; NomadRatesBot/2.0)}
-      max-parallel: ${XE_MAX_PARALLEL:2}  # Важно для Reactor!
+      max-parallel: ${XE_MAX_PARALLEL:2}
       retry-attempts: ${XE_RETRY_ATTEMPTS:2}
       retry-delay-ms: ${XE_RETRY_DELAY:200}
 
@@ -162,7 +168,7 @@ app:
   collector:
     enabled: ${COLLECTOR_ENABLED:true}
     initial-delay: ${COLLECTOR_INITIAL_DELAY:5000}
-    fixed-delay: ${COLLECTOR_FIXED_DELAY:3600000} # 1 час
+    fixed-delay: ${COLLECTOR_FIXED_DELAY:3600000}
 
   # Настройки для Loom
   loom:
@@ -201,19 +207,30 @@ spring:
       on-profile: production
 
   r2dbc:
+    url: ${SPRING_R2DBC_URL}  # Берем из переменных окружения Render
+    username: ${SPRING_R2DBC_USERNAME}
+    password: ${SPRING_R2DBC_PASSWORD}
     pool:
       max-size: 5
       initial-size: 1
     properties:
-      sslmode: require  # Включаем SSL для Render
+      sslmode: require
+      ssl: true
 
   datasource:
+    url: ${SPRING_DATASOURCE_URL}  # Берем из переменных окружения Render
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
       leak-detection-threshold: 30000
+      connection-timeout: 30000
 
   liquibase:
+    url: ${SPRING_DATASOURCE_URL}
+    user: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     contexts: prod,all
 
 server:
@@ -239,7 +256,7 @@ app:
       max-parallel: 2
       retry-attempts: 2
   collector:
-    fixed-delay: 7200000 # 2 часа
+    fixed-delay: 7200000
   loom:
     max-pool-size: 100
     connection-semaphore: 5
@@ -263,6 +280,9 @@ spring:
       on-profile: dev
 
   r2dbc:
+    url: ${R2DBC_URL:r2dbc:postgresql://localhost:5432/nomad}
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
     pool:
       max-size: 10
       initial-size: 2
@@ -270,12 +290,18 @@ spring:
       sslmode: disable
 
   datasource:
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
       leak-detection-threshold: 10000
 
   liquibase:
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/nomad}
+    user: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:qwerty}
     contexts: dev,all
 
 server:
