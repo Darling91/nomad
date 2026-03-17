@@ -9,7 +9,7 @@ spring:
     username: ${DB_USERNAME:admin}
     password: ${DB_PASSWORD:qwerty}
     pool:
-      max-size: 5
+      max-size: 5                    # Увеличиваем для параллельности
       initial-size: 2
       max-idle-time: 10m
       validation-query: SELECT 1
@@ -28,38 +28,41 @@ server:
   netty:
     connection-timeout: 5s
 
+# ============================================
+# ОПТИМИЗИРОВАННЫЕ НАСТРОЙКИ ПАРСЕРОВ
+# ============================================
 app:
   parser:
     nbk:
       url: https://nationalbank.kz/ru/exchangerates/ezhednevnye-oficialnye-rynochnye-kursy-valyut
-      timeout: 5000
+      timeout: 5000                    # Уменьшаем с 15 до 5 секунд
       connect-timeout: 3000
       read-timeout: 5000
       user-agent: "Mozilla/5.0 (compatible; NomadRatesBot/2.0)"
 
     xe:
       url: https://www.xe.com/currencyconverter/convert/?Amount=1&From=%s&To=KZT
-      timeout: 4000
+      timeout: 4000                     # Уменьшаем с 15 до 4 секунд
       connect-timeout: 2000
       read-timeout: 4000
       user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-      max-parallel: 5
-      retry-attempts: 0
+      max-parallel: 5                    # УВЕЛИЧИВАЕМ с 1 до 5 параллельных запросов
+      retry-attempts: 0                   # Отключаем retry для скорости
       retry-delay-ms: 0
-      cache-ttl: 60000
+      cache-ttl: 60000                    # Кэшируем на 60 секунд
 
   collector:
     enabled: true
-    initial-delay: 0
-    fixed-delay: 300000
+    initial-delay: 0                      # Убираем задержку
+    fixed-delay: 300000                    # 5 минут между сборами
 
   reactor:
-    max-connections: 50
+    max-connections: 50                    # Увеличиваем параллельность
     retry-attempts: 0
     bulkhead-size: 20
 
   timeout:
-    collection: 10
+    collection: 10                          # Уменьшаем общий таймаут до 10 секунд
     connection: 5
     request: 8
 
