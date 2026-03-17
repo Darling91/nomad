@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nomad-postgres
+    environment:
+      POSTGRES_DB: nomad
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nomad -d nomad_rates"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nomad-network
+
+volumes:
+  postgres_data:
+    name: nomad-postgres-data
+
+networks:
+  nomad-network:
+    name: nomad-network
+    driver: bridge

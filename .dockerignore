@@ -1,0 +1,10 @@
+target/
+.git/
+*.md
+.env
+.vscode/
+.idea/
+*.log
+build/  # Добавить, чтобы не копировать старую сборку
+.gradle # Добавить, чтобы не копировать кеш Gradle с хоста
+.DS_Store # Добавить для macOS

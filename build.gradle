@@ -1,0 +1,180 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'nu.studer.jooq' version '9.0' apply true
+}
+
+group = 'com.nomad'
+version = '0.0.1-SNAPSHOT'
+description = 'Chain saq'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springAiVersion', "2.0.0-M2")
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-restclient'
+    implementation 'org.springframework.boot:spring-boot-starter-jooq'
+    implementation 'org.springframework.boot:spring-boot-starter-liquibase'
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'com.zaxxer:HikariCP'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.ai:spring-ai-jsoup-document-reader'
+    implementation 'org.postgresql:r2dbc-postgresql'
+    implementation 'io.r2dbc:r2dbc-pool'
+    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-jooq-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-liquibase-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-r2dbc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webflux-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    jooqGenerator 'org.postgresql:postgresql'
+}
+
+jooq {
+    version = '3.19.30'
+    configurations {
+        main {
+            generationTool {
+                logging = org.jooq.meta.jaxb.Logging.WARN
+
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://localhost:5432/nomad'
+                    user = 'admin'
+                    password = 'qwerty'
+                }
+
+                generator {
+                    name = 'org.jooq.codegen.JavaGenerator'
+
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        inputSchema = 'public'
+                        includes = '.*'
+                        excludes = 'pg_catalog.*|information_schema.*|pg_toast.*'
+                    }
+
+                    generate {
+                        deprecated = false
+                        records = true
+                        immutablePojos = true
+                        fluentSetters = true
+                        daos = false
+                        pojos = true
+                        springAnnotations = true
+                        constructorPropertiesAnnotation = true
+                        constructorPropertiesAnnotationOnPojos = true
+                        constructorPropertiesAnnotationOnRecords = true
+                        javaTimeTypes = true
+                        generatedAnnotation = true
+                        // ВАЖНО: Отключаем nullable аннотации
+                        nullableAnnotation = false
+                        // nullableAnnotationType = 'javax.annotation.Nullable' // Закомментировать или удалить
+                    }
+
+                    target {
+                        packageName = 'com.nomad.generated.jooq'
+                        directory = 'build/generated/sources/jooq/main'
+                    }
+                }
+            }
+        }
+
+        // Аналогично для loom
+        loom {
+            generationTool {
+                logging = org.jooq.meta.jaxb.Logging.WARN
+
+                jdbc {
+                    driver = 'org.postgresql.Driver'
+                    url = 'jdbc:postgresql://localhost:5432/nomad'
+                    user = 'admin'
+                    password = 'qwerty'
+                }
+
+                generator {
+                    name = 'org.jooq.codegen.JavaGenerator'
+
+                    database {
+                        name = 'org.jooq.meta.postgres.PostgresDatabase'
+                        inputSchema = 'public'
+                        includes = '.*'
+                        excludes = 'pg_catalog.*|information_schema.*|pg_toast.*'
+                    }
+
+                    generate {
+                        deprecated = false
+                        records = true
+                        immutablePojos = true
+                        fluentSetters = true
+                        daos = false
+                        pojos = true
+                        springAnnotations = true
+                        // ВАЖНО: Отключаем nullable аннотации
+                        nullableAnnotation = false
+                    }
+
+                    target {
+                        packageName = 'com.nomad.generated.jooq.loom'
+                        directory = 'build/generated/sources/jooq/loom'
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Задача для генерации jOOQ классов перед компиляцией
+tasks.named('generateJooq').configure {
+    // Убедимся, что PostgreSQL запущен
+    doFirst {
+        println "🔧 Генерация jOOQ классов из схемы PostgreSQL..."
+    }
+}
+
+// Отдельные задачи для каждого приложения
+tasks.register('generateJooqForReactor') {
+    dependsOn 'generateJooq'
+    doLast {
+        println "✅ jOOQ классы сгенерированы для Reactor приложения"
+    }
+}
+
+tasks.register('generateJooqForLoom') {
+    dependsOn 'generateJooqLoom'
+    doLast {
+        println "✅ jOOQ классы сгенерированы для Loom приложения"
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
